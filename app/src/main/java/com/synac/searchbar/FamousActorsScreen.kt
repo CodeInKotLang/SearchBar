@@ -1,9 +1,14 @@
 package com.synac.searchbar
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.defaultDecayAnimationSpec
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -12,11 +17,16 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,22 +34,59 @@ import com.synac.searchbar.ui.theme.BackgroundColor
 import com.synac.searchbar.ui.theme.CardBackgroundColor
 import com.synac.searchbar.ui.theme.cairoFont
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun FamousActorsScreen() {
+fun FamousActorsScreen(
+    viewModel: FamousActorsViewModel
+) {
+
+    val state = viewModel.state
+
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundColor)
             .padding(20.dp)
     ) {
-        SearchAppBar()
+        Crossfade(
+            targetState = state.isSearchBarVisible,
+            animationSpec = tween(durationMillis = 500)
+        ) {
+            if (it) {
+                SearchAppBar(
+                    onCloseIconClicked = {
+                        viewModel.onAction(UserAction.CloseIconClicked)
+                    },
+                    onInputValueChange = { newText ->
+                        viewModel.onAction(
+                            UserAction.TextFieldInput(newText)
+                        )
+                    },
+                    text = state.searchText,
+                    onSearchClicked = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                    }
+                )
+            } else {
+                TopAppBar(
+                    onSearchIconClicked = {
+                        viewModel.onAction(UserAction.SearchIconClicked)
+                    }
+                )
+            }
+        }
+
         Divider(
             color = CardBackgroundColor,
             thickness = 2.dp,
             modifier = Modifier.padding(vertical = 30.dp)
         )
         LazyColumn {
-            items(actorsList) { actor ->
+            items(state.list) { actor ->
                 SingleItemCard(
                     actorName = actor
                 )
@@ -50,11 +97,22 @@ fun FamousActorsScreen() {
 }
 
 @Composable
-fun SearchAppBar() {
+fun SearchAppBar(
+    onCloseIconClicked: () -> Unit,
+    onInputValueChange: (String) -> Unit,
+    text: String,
+    onSearchClicked: () -> Unit
+) {
     OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
-        value = "",
-        onValueChange = {},
+        value = text,
+        onValueChange = {
+            onInputValueChange(it)
+        },
+        textStyle = TextStyle(
+            color = Color.White,
+            fontSize = 18.sp
+        ),
         leadingIcon = {
             Icon(
                 imageVector = Icons.Filled.Search,
@@ -65,7 +123,15 @@ fun SearchAppBar() {
             )
         },
         trailingIcon = {
-            IconButton(onClick = { /*TODO*/ }) {
+            IconButton(
+                onClick = {
+                    if (text.isNotEmpty()) {
+                        onInputValueChange("")
+                    } else {
+                        onCloseIconClicked()
+                    }
+                }
+            ) {
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = "Close Icon",
@@ -78,7 +144,11 @@ fun SearchAppBar() {
                 alpha = ContentAlpha.medium
             ),
             focusedBorderColor = Color.White,
-            cursorColor = Color.White
+            cursorColor = Color.White,
+        ),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(
+            onSearch = { onSearchClicked() }
         )
     )
 }
@@ -112,7 +182,9 @@ fun SingleItemCard(
 }
 
 @Composable
-fun TopAppBar() {
+fun TopAppBar(
+    onSearchIconClicked: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -127,7 +199,7 @@ fun TopAppBar() {
             color = Color.White,
             fontFamily = FontFamily.Cursive
         )
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = onSearchIconClicked) {
             Icon(
                 imageVector = Icons.Rounded.Search,
                 contentDescription = "Search Icon",
@@ -141,7 +213,9 @@ fun TopAppBar() {
 @Preview
 @Composable
 fun Prev() {
-    FamousActorsScreen()
+    FamousActorsScreen(
+        viewModel = FamousActorsViewModel()
+    )
 }
 
 
