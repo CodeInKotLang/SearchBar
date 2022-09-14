@@ -75,6 +75,28 @@ fun FamousActorsScreen(
                 TopAppBar(
                     onSearchIconClicked = {
                         viewModel.onAction(UserAction.SearchIconClicked)
+                    },
+                    onSortIconClicked = {
+                        viewModel.onAction(UserAction.SortIconClicked)
+                    },
+                    onSortMenuDismiss = {
+                        viewModel.onAction(UserAction.SortMenuDismiss)
+                    },
+                    isSortMenuVisible = state.isSortMenuVisible,
+                    onSortItemA2ZClicked = {
+                        viewModel.onAction(
+                            UserAction.SortItemClicked(SortType.A2Z)
+                        )
+                    },
+                    onSortItemZ2AClicked = {
+                        viewModel.onAction(
+                            UserAction.SortItemClicked(SortType.Z2A)
+                        )
+                    },
+                    onSortItemNoneClicked = {
+                        viewModel.onAction(
+                            UserAction.SortItemClicked(SortType.NONE)
+                        )
                     }
                 )
             }
@@ -113,6 +135,13 @@ fun SearchAppBar(
             color = Color.White,
             fontSize = 18.sp
         ),
+        placeholder = {
+            Text(
+                text = "Search...",
+                fontFamily = cairoFont,
+                color = Color.White.copy(alpha = ContentAlpha.medium)
+            )
+        },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Filled.Search,
@@ -183,14 +212,19 @@ fun SingleItemCard(
 
 @Composable
 fun TopAppBar(
-    onSearchIconClicked: () -> Unit
+    onSearchIconClicked: () -> Unit,
+    onSortIconClicked: () -> Unit,
+    onSortMenuDismiss: () -> Unit,
+    onSortItemA2ZClicked: () -> Unit,
+    onSortItemZ2AClicked: () -> Unit,
+    onSortItemNoneClicked: () -> Unit,
+    isSortMenuVisible: Boolean
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = "Famous Actors",
@@ -199,6 +233,29 @@ fun TopAppBar(
             color = Color.White,
             fontFamily = FontFamily.Cursive
         )
+        Spacer(modifier = Modifier.weight(1f))
+        IconButton(onClick = onSortIconClicked) {
+            Icon(
+                painter = painterResource(R.drawable.ic_sort),
+                contentDescription = "Sort Icon",
+                tint = Color.White,
+                modifier = Modifier.size(30.dp)
+            )
+            DropdownMenu(
+                expanded = isSortMenuVisible,
+                onDismissRequest = onSortMenuDismiss
+            ) {
+                DropdownMenuItem(onClick = onSortItemA2ZClicked) {
+                    Text(text = "Sort  A -> Z")
+                }
+                DropdownMenuItem(onClick =onSortItemZ2AClicked) {
+                    Text(text = "Sort  Z -> A")
+                }
+                DropdownMenuItem(onClick = onSortItemNoneClicked) {
+                    Text(text = "No Sort")
+                }
+            }
+        }
         IconButton(onClick = onSearchIconClicked) {
             Icon(
                 imageVector = Icons.Rounded.Search,

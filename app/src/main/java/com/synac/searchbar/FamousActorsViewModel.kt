@@ -31,8 +31,45 @@ class FamousActorsViewModel : ViewModel() {
                     searchActorsInList(searchQuery = userAction.text)
                 }
             }
+            UserAction.SortIconClicked -> {
+                state = state.copy(isSortMenuVisible = true)
+            }
+            UserAction.SortMenuDismiss -> {
+                state = state.copy(isSortMenuVisible = false)
+            }
+            is UserAction.SortItemClicked -> {
+                when(userAction.type) {
+                    SortType.A2Z -> sortActorsListA2Z()
+                    SortType.Z2A -> sortActorsListZ2A()
+                    SortType.NONE -> sortActorsListNone()
+                }
+            }
         }
     }
+
+    private fun sortActorsListNone() {
+        state = state.copy(
+            list = actorsList,
+            isSortMenuVisible = false
+        )
+    }
+
+    private fun sortActorsListA2Z() {
+        val newList = actorsList.sorted()
+        state = state.copy(
+            list = newList,
+            isSortMenuVisible = false
+        )
+    }
+
+    private fun sortActorsListZ2A() {
+        val newList = actorsList.sorted().reversed()
+        state = state.copy(
+            list = newList,
+            isSortMenuVisible = false
+        )
+    }
+
     private fun searchActorsInList(
         searchQuery: String
     ) {
@@ -44,15 +81,24 @@ class FamousActorsViewModel : ViewModel() {
 }
 
 
-
 sealed class UserAction {
     object SearchIconClicked : UserAction()
     object CloseIconClicked : UserAction()
+    object SortIconClicked : UserAction()
+    object SortMenuDismiss : UserAction()
     data class TextFieldInput(val text: String) : UserAction()
+    data class SortItemClicked(val type: SortType) : UserAction()
+}
+
+enum class SortType {
+    A2Z,
+    Z2A,
+    NONE
 }
 
 data class ActorsScreenState(
     val searchText: String = "",
     val list: List<String> = actorsList,
-    val isSearchBarVisible: Boolean = false
+    val isSearchBarVisible: Boolean = false,
+    val isSortMenuVisible: Boolean = false,
 )
